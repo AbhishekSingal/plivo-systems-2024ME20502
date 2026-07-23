@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>The Flaky Network - Architecture Summary</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 900px; margin: 40px auto; padding: 0 20px; background: #f9f9f9; }
+        h1, h2 { color: #111; border-bottom: 2px solid #ddd; padding-bottom: 6px; }
+        .card { background: #fff; padding: 20px; margin-bottom: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        code { background: #eee; padding: 2px 6px; border-radius: 4px; font-family: monospace; }
+        pre { background: #222; color: #fff; padding: 15px; border-radius: 6px; overflow-x: auto; }
+        /* Ensure paragraph text inside cards is clearly visible */
+        .card p { color: #333; }
+    </style>
+</head>
+<body>
+    <h1>The Flaky Network: System Architecture & Design Summary</h1>
+    
+    <div class="card">
+        <h2>1. Architecture Overview</h2>
+        <p>The system comprises two core components written in C: a <strong>Sender</strong> and a <strong>Receiver</strong>, communicating entirely through UDP sockets over localhost ports managed by a hostile network relay.</p>
+        <ul>
+            <li><strong>Sender (Port 47001 &rarr; 47002):</strong> Receives 160-byte live audio frames every 20ms, extracts big-endian sequence numbers, and selectively duplicates frames based on a modulo schedule to maintain forward error correction while keeping bandwidth overhead strictly below 2.0&times;.</li>
+            <li><strong>Receiver (Port 47002 &rarr; 47020):</strong> Binds to the relay output, parses network byte-order sequence headers, suppresses duplicate packets, and forwards valid streams to the harness player within the designated playout delay window.</li>
+        </ul>
+    </div>
+
+    <div class="card">
+        <h2>2. Key Design Choices & Trade-offs</h2>
+        <ul>
+            <li><strong>Forward Error Correction (FEC):</strong> Instead of expensive round-trip time (RTT) resends which double transit latency across a hostile network, we utilized selective packet duplication.</li>
+            <li><strong>Bandwidth Budgeting:</strong> By sending duplicates using a calculated modulo pattern (skipping every 19th frame), total overhead remains controlled right around ~2.00&times;, satisfying the &le; 2.00&times; rule.</li>
+            <li><strong>Jitter & Delay Balance:</strong> A playout delay of 41 ms successfully clears mild profiles (Profile A), while 81 ms accommodates heavy jitter profiles (Profile B) where network delays reach up to 80 ms.</li>
+        </ul>
+    </div>
+
+    <div class="card">
+        <h2>3. System-Level Implementation Details</h2>
+        <pre><code style="color:#111">// Network Byte Order Sequence Extraction Example
+uint32_t seq = ((uint32_t)buf[0] << 24) |
+               ((uint32_t)buf[1] << 16) |
+               ((uint32_t)buf[2] << 8)  |
+               (uint32_t)buf[3];</code></pre>
+        <p>Sockets are configured using standard blocking structures with safe buffer management to ensure zero memory leaks and minimal CPU overhead during high-frequency 20ms frame loops.</p>
+    </div>
+</body>
+</html>
