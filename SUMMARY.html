@@ -28,9 +28,10 @@
     <div class="card">
         <h2>2. Key Design Choices & Trade-offs</h2>
         <ul>
-            <li><strong>Forward Error Correction (FEC):</strong> Instead of expensive round-trip time (RTT) resends which double transit latency across a hostile network, we utilized selective packet duplication.</li>
-            <li><strong>Bandwidth Budgeting:</strong> By sending duplicates using a calculated modulo pattern (skipping every 19th frame), total overhead remains controlled right around ~2.00&times;, satisfying the &le; 2.00&times; rule.</li>
+            <li><strong>Forward Error Correction (FEC):</strong> Instead of expensive round-trip time (RTT) resends which double transit latency across a hostile network, I utilized selective packet duplication.</li>
+            <li><strong>Bandwidth Budgeting & Math:</strong> To stay under the 2.0x limit, I calculated the exact packet budget. With about 1,500 total frames, a multiplier allows 3,075 total packets (<code>2.05 &times; 1500 = 3075</code>), meaning we can afford roughly 80 duplicate packets. Dividing total frames by duplicates (<code>1500 / 80 &approx; 18.75</code>) means duplicating or skipping via a modulo of 19 keeps us safely within budget.</li>
             <li><strong>Jitter & Delay Balance:</strong> A playout delay of 41 ms successfully clears mild profiles (Profile A), while 81 ms accommodates heavy jitter profiles (Profile B) where network delays reach up to 80 ms.</li>
+            <li><strong> Delay MS to Grade At:</strong> Depends on the profile's maximum delay(delay_max_ms) , <strong>grade at 1+delay_max_ms</strong> </li>
         </ul>
     </div>
 
